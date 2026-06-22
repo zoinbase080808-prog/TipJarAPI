@@ -7,39 +7,57 @@ const app = express();
 app.use(cors());
 
 
-app.get("/passes/:userid", async (req,res)=>{
+app.get("/passes/:userid", async(req,res)=>{
 
     const userId = req.params.userid;
 
     try {
 
-        let games = await axios.get(
-            `https://games.roblox.com/v2/users/${userId}/games?accessFilter=Public&sortOrder=Asc&limit=50`
-        );
+
+        let url =
+        `https://www.pekora.zip/list-json?userId=${userId}&assetTypeId=34&pageNumber=1&itemsPerPage=100`;
+
+
+        let response = await axios.get(url);
+
+
+        let items = response.data.Data.Items;
 
 
         let passes = [];
 
 
-        for (const game of games.data.data) {
-
-            let gamePasses = await axios.get(
-                `https://games.roblox.com/v1/games/${game.id}/game-passes?limit=100`
-            );
+        for(let item of items){
 
 
-            for (const pass of gamePasses.data.data) {
+            if(item.Product && item.Product.IsForSale){
+
 
                 passes.push({
-                    Id: pass.id,
-                    Name: pass.name
+
+                    Id: item.Item.AssetId,
+
+                    Name: item.Item.Name,
+
+                    Price: item.Product.PriceInRobux
+
                 });
 
             }
+
         }
 
 
+        console.log(
+            "Игрок:",
+            userId,
+            "GamePass:",
+            passes.length
+        );
+
+
         res.json(passes);
+
 
 
     } catch(e){
@@ -50,11 +68,12 @@ app.get("/passes/:userid", async (req,res)=>{
 
     }
 
+
 });
 
 
-app.listen(3000, ()=>{
+app.listen(process.env.PORT || 3000,()=>{
 
-    console.log("TipJar API online");
+console.log("TipJar API online");
 
 });
