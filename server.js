@@ -1,79 +1,68 @@
 const express = require("express");
 const axios = require("axios");
-const cors = require("cors");
 
 const app = express();
 
-app.use(cors());
+const PORT = process.env.PORT || 3000;
 
 
-app.get("/passes/:userid", async(req,res)=>{
+app.get("/passes/:userId", async (req,res)=>{
 
-    const userId = req.params.userid;
+    const userId = req.params.userId;
+
+    let passes = [];
+    let cursor = "";
 
     try {
 
+        do {
 
-        let url =
-        `https://www.pekora.zip/list-json?userId=${userId}&assetTypeId=34&pageNumber=1&itemsPerPage=100`;
-
-
-        let response = await axios.get(url);
+            let url =
+            `https://apis.roblox.com/game-passes/v1/users/${userId}/game-passes?count=100&exclusiveStartId=${cursor}`;
 
 
-        let items = response.data.Data.Items;
+            const response = await axios.get(url);
 
 
-        let passes = [];
+            const data = response.data;
 
 
-        for(let item of items){
-
-
-            if(item.Product && item.Product.IsForSale){
-
+            for(const pass of data.gamePasses){
 
                 passes.push({
-
-                    Id: item.Item.AssetId,
-
-                    Name: item.Item.Name,
-
-                    Price: item.Product.PriceInRobux
-
+                    id: pass.id,
+                    name: pass.name,
+                    price: pass.price
                 });
 
             }
 
-        }
+
+            cursor = data.nextPageToken || "";
 
 
-        console.log(
-            "Игрок:",
-            userId,
-            "GamePass:",
-            passes.length
-        );
+        } while(cursor);
+
 
 
         res.json(passes);
 
 
-
     } catch(e){
 
         console.log(e.message);
-
         res.json([]);
 
     }
 
-
 });
 
 
-app.listen(process.env.PORT || 3000,()=>{
+app.get("/",(req,res)=>{
+    res.send("TipJar API online");
+});
 
-console.log("TipJar API online");
 
+app.listen(PORT,()=>{
+    console.log("TipJar API online");
 });
